@@ -21,6 +21,16 @@ chrs<- names(cayo_filtered_list)
 ##### Generate M/Cov Matrices #####
 ###################################
 #Promoters----------------------------------------------------------------------
+dnam_to_regions<- function(bsseq_list, region_list, coverage_type){
+  return_list<- parallel::mclapply(names(bsseq_list),function(x){
+    dd=getCoverage(cayo_filtered_list[[x]], regions = region_list[region_list@seqnames==x,], type = coverage_type, 
+                   what = "perRegionTotal")
+    rownames(dd)=region_list[region_list@seqnames==x,]$gene_id
+    return(as.data.frame(dd))
+  },mc.cores=20)
+  return(return_list)
+}
+
 prom_m_list<- parallel::mclapply(names(cayo_filtered_list),function(x){
   dd=getCoverage(cayo_filtered_list[[x]], regions = promoters[promoters@seqnames==x,], type = "M", 
                  what = "perRegionTotal")
