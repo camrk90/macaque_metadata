@@ -1,9 +1,17 @@
 library(bsseq)
 library(tidyverse)
 library(comethyl)
-setwd("/scratch/ckelsey4/Cayo_meth")
+library(here)
 
-#Load in data-------------------------------------------------------------------
+#Set top level path 
+top_path<- here()
+
+#Load source functions for getting coverage and filtering matrices
+source(file.path(top_path, "methylation_metadata", "metadata_functions.R"))
+
+###################################
+#####        Load Data        #####
+###################################
 #Regions
 regions<- readRDS("regions_filtered.rds")
 
@@ -21,13 +29,17 @@ chrs<- names(cayo_filtered_list)
 ##### Generate M/Cov Matrices #####
 ###################################
 #Promoters----------------------------------------------------------------------
-dnam_to_regions<- function(bsseq_list, region_list, coverage_type){
+dnam_to_regions<- function(bsseq_list, region_list, coverage_type, chr_names){
+  
   return_list<- parallel::mclapply(names(bsseq_list),function(x){
     dd=getCoverage(cayo_filtered_list[[x]], regions = region_list[region_list@seqnames==x,], type = coverage_type, 
                    what = "perRegionTotal")
     rownames(dd)=region_list[region_list@seqnames==x,]$gene_id
     return(as.data.frame(dd))
   },mc.cores=20)
+  
+  names(return_list)<- chr_names
+  
   return(return_list)
 }
 
