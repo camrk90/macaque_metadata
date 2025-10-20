@@ -12,8 +12,7 @@ meta_short<- long_data %>%
 meta_short<- meta_short[!meta_short$n == 1,]
 lids<- long_data[! long_data$lid_pid %in% meta_short$lid_pid,]
 
-#Import m/cov rds------------------------------------------------------------
-#Import m/cov rds------------------------------------------------------------
+#Import m/cov rds---------------------------------------------------------------
 regions_cov<- readRDS("/scratch/ckelsey4/Cayo_meth/regions_cov_filtered.rds")
 
 regions_cov<- lapply(names(regions_cov), function(x){
