@@ -51,6 +51,12 @@ lids_min<- lids %>%
 #Subset out lids with multiple entries at the same age
 long_data<- long_data[!long_data$lid_pid %in% lids_min$lid_pid,]
 
+#Recalculate n samples per individual
+long_data<- long_data %>%
+  group_by(monkey_id) %>%
+  mutate(n = n())
+
+#Write data to txt file
 write.table(long_data, 'long_data_adjusted.txt',
             quote=F)
 

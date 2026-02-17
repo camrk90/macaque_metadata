@@ -13,14 +13,14 @@ source(file.path(top_path, "methylation_metadata", "metadata_functions.R"))
 #####        Load Data        #####
 ###################################
 #Regions
-regions<- readRDS("regions_filtered.rds")
+regions<- readRDS("/scratch/ckelsey4/Cayo_meth/regions_filtered.rds")
 
 #Genes/Promoters
-genes<- readRDS("macaque_genes")
-promoters<- readRDS("macaque_promoters")
+genes<- readRDS("/scratch/ckelsey4/Cayo_meth/macaque_genes")
+promoters<- readRDS("/scratch/ckelsey4/Cayo_meth/macaque_promoters")
 
 #Filtered Cayo bsseq for regions
-cayo_filtered_list<- readRDS("cayo_filtered_list.rds")
+cayo_filtered_list<- readRDS("/scratch/ckelsey4/Cayo_meth/cayo_filtered_list.rds")
 
 #Generate vector of chr names
 chrs<- names(cayo_filtered_list)
@@ -29,19 +29,7 @@ chrs<- names(cayo_filtered_list)
 ##### Generate M/Cov Matrices #####
 ###################################
 #Promoters----------------------------------------------------------------------
-dnam_to_regions<- function(bsseq_list, region_list, coverage_type, chr_names){
-  
-  return_list<- parallel::mclapply(names(bsseq_list),function(x){
-    dd=getCoverage(cayo_filtered_list[[x]], regions = region_list[region_list@seqnames==x,], type = coverage_type, 
-                   what = "perRegionTotal")
-    rownames(dd)=region_list[region_list@seqnames==x,]$gene_id
-    return(as.data.frame(dd))
-  },mc.cores=20)
-  
-  names(return_list)<- chr_names
-  
-  return(return_list)
-}
+prom_m_list<- dnam_to_regions(cayo_filtered_list, promoters, "M", chrs)
 
 prom_m_list<- parallel::mclapply(names(cayo_filtered_list),function(x){
   dd=getCoverage(cayo_filtered_list[[x]], regions = promoters[promoters@seqnames==x,], type = "M", 

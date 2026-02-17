@@ -18,6 +18,7 @@ dnam_animal_ids<- blood_metadata$monkey_id
 dnam_bio_ids<- blood_metadata$lid_pid
 
 rna_animal_ids<- rna_meta$animal_ID
+rna_bio_ids<- rna_meta$Sample_ID
 
 #Import king output file
 file.king <- c(paste(path, "king.kin0", sep=""))
@@ -82,7 +83,6 @@ generate_kinship<- function(animal_ids, bio_ids, bio_type){
 
 dnam_kin<- generate_kinship(dnam_animal_ids, dnam_bio_ids)
 rna_kin<- generate_kinship(rna_animal_ids, rna_bio_ids, "rna")
-
 
 #Save output file as rds
 saveRDS(dnam_kin, paste0(path, "full_kin_matrix.rds", sep=""))
