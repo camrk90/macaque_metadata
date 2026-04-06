@@ -1,32 +1,31 @@
 library(tidyverse)
 library(GENESIS)
 
-path<- "/scratch/ckelsey4/Cayo_meth/"
+path<- "/home/ckelsey4/"
 
 #Import metadata
-blood_metadata<- read.table(paste(path, "blood_metadata_full.txt", sep=""))
+blood_metadata<- read.table(paste(path, "Cayo_meth/twist_metadata.txt", sep=""), sep = "\t", header = T)
+blood_metadata<- blood_metadata %>%
+  arrange(vantage_id)
 
-rna_meta<- readRDS("/home/ckelsey4/Cayo_meth/rna_seq/Cayo_PBMC_longLPS_metadata_wELA_18Jul25.rds")
-
+rna_meta<- read.table(paste(path, "rna_data/base_meta.txt", sep = ""))
 rna_meta<- rna_meta %>%
-  filter(Stimulation == "H2O") %>%
-  select(c(animal_ID, sex, trapped_age, trapping_ID, Sample_ID, Seq_batch)) %>%
   arrange(Sample_ID)
 
 #Generate vectors of animal biosample ids
-dnam_animal_ids<- blood_metadata$monkey_id
-dnam_bio_ids<- blood_metadata$lid_pid
+dnam_animal_ids<- blood_metadata$subject_id
+dnam_bio_ids<- blood_metadata$vantage_id
 
 rna_animal_ids<- rna_meta$animal_ID
 rna_bio_ids<- rna_meta$Sample_ID
 
 #Import king output file
-file.king <- c(paste(path, "king.kin0", sep=""))
+file.king <- "king.kin0"
 
 generate_kinship<- function(animal_ids, bio_ids, bio_type){
   
   #Generate kin matrix
-  kin.matrix<- kingToMatrix(file.king, estimator = "Kinship", sample.include=animal_ids)
+  kin.matrix<- kingToMatrix("/scratch/ckelsey4/Cayo_meth/king.kin0", estimator = "Kinship", sample.include=animal_ids)
   kinmat<- as.matrix(kin.matrix)
   
   #Arrange kinmat colnames by metadata to match r_matrix
@@ -81,9 +80,9 @@ generate_kinship<- function(animal_ids, bio_ids, bio_type){
   
 }
 
-dnam_kin<- generate_kinship(dnam_animal_ids, dnam_bio_ids)
+dnam_kin<- generate_kinship(dnam_animal_ids, dnam_bio_ids, "dnam")
 rna_kin<- generate_kinship(rna_animal_ids, rna_bio_ids, "rna")
 
 #Save output file as rds
-saveRDS(dnam_kin, paste0(path, "full_kin_matrix.rds", sep=""))
-saveRDS(rna_kin, paste(path, "rna_kin_matrix.rds", sep=""))
+saveRDS(dnam_kin, paste0(path, "Cayo_meth/dnam_kin_matrix.rds", sep=""))
+saveRDS(rna_kin, paste(path, "rna_data/rna_kin_matrix.rds", sep=""))
