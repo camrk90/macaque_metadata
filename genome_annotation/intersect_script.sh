@@ -1,33 +1,24 @@
 #!/bin/sh
 
-module load bedtools2-2.30.0-gcc-11.2.0
+#This script intersects CpG sites with pre-defined genomic regions and then with an annotation file.
+#Annotation files should be in .bed format and located in the same directory as this script.
 
-#All input files should be in bed file format
+module load bedtools2-2.30.0-gcc-11.2.0
 
 #Input files
 CPGs=$1
-Y_CPGs=$2
 REGIONS=$3
-REGIONS_Y=$4
-REPEATS=$5
-CHMM=$6
 
 #Output files
 CPGSxREGIONS=regions_to_cpgs.txt
-Y_CPGSxREGIONS=y_regions_to_cpgs.txt
-ALL_CPGS=all_regions_to_cpgs.txt
 
 #Intersect autosome/x-chrom cpgs and regions
 bedtools intersect -a ${CPGs} -b ${REGIONS} -wa -wb > ${CPGSxREGIONS}
 
-#Intersect y-chrom cpgs and regions
-bedtools intersect -a ${Y_CPGs} -b ${REGIONS_Y} -wa -wb > ${Y_CPGSxREGIONS}
+#intersect with the annotation file
+for file in *.bed; do
+    echo "Intersecting ${file} with annotation file..."
 
-#Concatenate autosomes/x-chrom/y-chrom cpgs
-cat ${CPGSxREGIONS} ${Y_CPGSxREGIONS} > ${ALL_CPGS}
+    bedtools intersect -a ${file} -b ${CPGSxREGIONS} -wo > ${file%.bed}_annotation_intersect.txt
+done
 
-#intersect with the repeats file
-bedtools intersect -a ${REPEATS} -b ${ALL_CPGS} -wo > region_repeat_intersect.txt
-
-#intersect with the lifted over chmm file
-bedtools intersect -a ${CHMM} -b ${ALL_CPGS} -wo > region_chmm_intersect.txt
