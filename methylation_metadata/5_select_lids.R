@@ -2,7 +2,8 @@ library(tidyverse)
 setwd("/scratch/ckelsey4/Cayo_meth")
 
 #This script is for selecting lids with the highest cov/m for those that are duplicated at the same age
-long_data<- read.table("/scratch/ckelsey4/Cayo_meth/long_data.txt")
+long_data<- read.table("/scratch/ckelsey4/Cayo_meth/long_data.txt", sep = "\t", header = T) %>%
+  select(-group)
 
 meta_short<- long_data %>%
   group_by(monkey_id) %>%
@@ -54,7 +55,14 @@ long_data<- long_data[!long_data$lid_pid %in% lids_min$lid_pid,]
 #Recalculate n samples per individual
 long_data<- long_data %>%
   group_by(monkey_id) %>%
-  mutate(n = n())
+  mutate(n = n()) %>%
+  ungroup()
+
+long_data<- long_data %>%
+  filter(age_at_sampling > 1) %>%
+  filter(n > 1) %>%
+  drop_na() %>%
+  arrange(lid_pid)
 
 #Write data to txt file
 write.table(long_data, 'long_data_adjusted.txt',

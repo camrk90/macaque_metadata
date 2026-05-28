@@ -97,7 +97,7 @@ filter_tails<- function(x, y){
   #Generate percent methylation matrix
   ratio<- mapply('/', x, y, SIMPLIFY = F)
   
-  #Filter out methylated genes that are constituvively hyper/hypomethylated
+  #Filter out methylated genes that are constitutively hyper/hypomethylated
   ratio<- sapply(names(ratio), function(i){
     
     df<- ratio[[i]]
@@ -228,7 +228,7 @@ saveRDS(genes_m_filtered, "genes_m_filtered.rds")
 saveRDS(genes_cov_filtered, "genes_cov_filtered.rds")
 
 #Regions
-saveRDS(regions_m_filtered, "regions_m_filtered.rds")
-saveRDS(regions_cov_filtered, "regions_cov_filtered.rds")
+saveRDS(regions_m_filtered, "/scratch/ckelsey4/Cayo_meth/regions_m_filtered.rds")
+saveRDS(regions_cov_filtered, "/scratch/ckelsey4/Cayo_meth/regions_cov_filtered.rds")
 
 
