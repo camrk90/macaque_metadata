@@ -16,7 +16,7 @@ CPGSxREGIONS=regions_to_cpgs.txt
 bedtools intersect -a ${CPGs} -b ${REGIONS} -wa -wb > ${CPGSxREGIONS}
 
 #intersect with the annotation file
-for file in *.bed; do
+for file in mmul_*.bed; do
     echo "Intersecting ${file} with annotation file..."
 
     bedtools intersect -a ${file} -b ${CPGSxREGIONS} -wo > ${file%.bed}_annotation_intersect.txt
