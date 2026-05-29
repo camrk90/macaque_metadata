@@ -2,6 +2,9 @@ library(tidyverse)
 library(GenomicFeatures)
 library(GenomicRanges)
 
+#Set chrs to keep
+selected_chrs<- paste("chr", c(1:20, "X"), sep = "")
+
 ######################################
 ### Generate .bed file for regions ###
 ######################################
@@ -19,6 +22,48 @@ regions$chrom<- gsub(" ", "", paste("chr", regions$chrom, ""))
 
 #Generate .bed file
 regions_bed<- GenomicRanges::makeGRangesFromDataFrame(regions)
+
+#################################################
+###   Generate .bed file for Islands/Shores   ###
+#################################################
+#Load in CpG Islands file
+cpg_islands<- read.csv("/home/ckelsey4/Cayo_meth/intersect_files/cpgIslandExt.txt", sep = "\t", header = F)
+cpg_islands<- cpg_islands[, 2:4]
+colnames(cpg_islands)<- c("chrom", "chromStart", "chromEnd")
+
+#Generate CpG shores 
+cpg_shores<- cpg_islands %>%
+  dplyr::select(chrom, chromStart) %>% 
+  dplyr::rename(chromEnd = chromStart) %>%
+  mutate(chromStart = chromEnd - 2000) %>%
+  relocate(chromStart, .before = chromEnd)
+
+cpg_shores_1<- cpg_islands %>%
+  dplyr::select(chrom, chromEnd) %>% 
+  dplyr::rename(chromStart = chromEnd) %>%
+  mutate(chromEnd = chromStart + 2000)
+
+cpg_shores<- rbind(cpg_shores, cpg_shores_1)
+cpg_shores<- cpg_shores %>%
+  arrange(chrom, chromStart)
+
+##############################################
+###   Generate .bed file for Genes/Proms   ###
+##############################################
+paths<- c("/scratch/ckelsey4/Cayo_meth/macaque_genes.rds", 
+          "/scratch/ckelsey4/Cayo_meth/macaque_promoters.rds")
+
+genes_proms<- lapply(setNames(paths, c("genes", "proms")), function(x){
+  
+  #Load in genes/proms files
+  gr_obj<- readRDS(x)
+  
+  #Edit seqnames to include "chr"
+  seqlevelsStyle(gr_obj)<- "UCSC"
+  
+  gr_obj<- keepSeqlevels(gr_obj, selected_chrs, pruning.mode = "coarse")
+  
+})
 
 ######################################
 ###   Generate .bed file for TEs   ###
@@ -69,3 +114,8 @@ chmm_mmul2<- sort(chmm_mmul2)
 rtracklayer::export.bed(regions_bed, con = "./genome_annotation/regions.bed")
 rtracklayer::export.bed(repeats, con = "./genome_annotation/mmul_repeats.bed")
 rtracklayer::export.bed(chmm_mmul2, con = "./genome_annotation/mmul_chmm.bed")
+rtracklayer::export.bed(genes_proms[["genes"]], con = "./output_files/mmul_genes.bed")
+rtracklayer::export.bed(genes_proms[["proms"]], con = "./output_files/mmul_proms.bed")
+rtracklayer::export.bed(cpg_islands, con = "./output_files/mmul_islands.bed")
+rtracklayer::export.bed(cpg_shores, con = "./output_files/mmul_shores.bed")
+
