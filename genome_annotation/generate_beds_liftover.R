@@ -19,6 +19,8 @@ regions<- as.data.frame(regions) %>%
 
 #Add 'chr' string to chr col
 regions$chrom<- gsub(" ", "", paste("chr", regions$chrom, ""))
+regions<- regions %>%
+  mutate(chromStart = as.numeric(chromStart) + 1)
 
 #Generate .bed file
 regions_bed<- GenomicRanges::makeGRangesFromDataFrame(regions)
@@ -31,19 +33,30 @@ cpg_islands<- read.csv("/home/ckelsey4/Cayo_meth/intersect_files/cpgIslandExt.tx
 cpg_islands<- cpg_islands[, 2:4]
 colnames(cpg_islands)<- c("chrom", "chromStart", "chromEnd")
 
-#Generate CpG shores 
+#Remove bad chrom names
+island_chrs<- unique(cpg_islands$chrom)
+island_chrs<- island_chrs[!grepl("_NW_", island_chrs)]
+cpg_islands<- cpg_islands %>%
+  filter(chrom %in% island_chrs) %>%
+  mutate(chromStart = chromStart + 1)
+
+#Generate CpG shores 2kb upstream of island start site 
 cpg_shores<- cpg_islands %>%
   dplyr::select(chrom, chromStart) %>% 
   dplyr::rename(chromEnd = chromStart) %>%
   mutate(chromStart = chromEnd - 2000) %>%
   relocate(chromStart, .before = chromEnd)
 
+#Generate Cpg shores 2kb downstream of island end site
 cpg_shores_1<- cpg_islands %>%
   dplyr::select(chrom, chromEnd) %>% 
   dplyr::rename(chromStart = chromEnd) %>%
   mutate(chromEnd = chromStart + 2000)
 
+#Bind shores and make any negative values 1
 cpg_shores<- rbind(cpg_shores, cpg_shores_1)
+cpg_shores<- cpg_shores %>%
+  mutate(chromStart = ifelse(chromStart < 0, 1, chromStart))
 cpg_shores<- cpg_shores %>%
   arrange(chrom, chromStart)
 
@@ -63,6 +76,8 @@ genes_proms<- lapply(setNames(paths, c("genes", "proms")), function(x){
   
   gr_obj<- keepSeqlevels(gr_obj, selected_chrs, pruning.mode = "coarse")
   
+  gr_obj<- sort(gr_obj)
+  
 })
 
 ######################################
@@ -78,14 +93,14 @@ chrs<- unique(gsub("_.*", "", repeats$chrom))
 chrs<- chrs[!chrs %in% c("chrUn", "chrY", "chrM")]
 repeats<- repeats %>% filter(chrom %in% chrs)
 
-#Add 1 to coordinates to account for the fact that exporting to bed will subtract 1 to make it 0-based
-#the repeats file is already 0-based
-repeats<- repeats %>%
-  mutate(chromStart = chromStart + 1, chromEnd = chromEnd + 1)
-
 #Generate range col to more easily match joins in analysis script
 repeats<- repeats %>%
   mutate(range = paste(as.character(chromStart), "-", as.character(chromEnd)))
+
+#Add 1 to coordinates to account for the fact that exporting to bed will subtract 1 to make it 0-based
+#the repeats file is already 0-based
+repeats<- repeats %>%
+  mutate(chromStart = chromStart + 1)
 
 #Sort chrs numerically
 repeats<- repeats[str_order(repeats$chrom, numeric = TRUE), ]
@@ -111,9 +126,9 @@ chmm_mmul2<- keepSeqlevels(chmm_mmul, selected_chrs, pruning.mode = "coarse")
 chmm_mmul2<- sort(chmm_mmul2)
 
 #Export files as .bed for intersect---------------------------------------------
-rtracklayer::export.bed(regions_bed, con = "./genome_annotation/regions.bed")
-rtracklayer::export.bed(repeats, con = "./genome_annotation/mmul_repeats.bed")
-rtracklayer::export.bed(chmm_mmul2, con = "./genome_annotation/mmul_chmm.bed")
+rtracklayer::export.bed(regions_bed, con = "./output_files/regions.bed")
+rtracklayer::export.bed(repeats, con = "./output_files/mmul_repeats.bed")
+rtracklayer::export.bed(chmm_mmul2, con = "./output_files/mmul_chmm.bed")
 rtracklayer::export.bed(genes_proms[["genes"]], con = "./output_files/mmul_genes.bed")
 rtracklayer::export.bed(genes_proms[["proms"]], con = "./output_files/mmul_proms.bed")
 rtracklayer::export.bed(cpg_islands, con = "./output_files/mmul_islands.bed")

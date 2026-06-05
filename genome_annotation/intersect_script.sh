@@ -5,27 +5,28 @@
 
 module load bedtools2-2.30.0-gcc-11.2.0
 
-#Set file path
-file_loc='~/Cayo_meth/intersect_files/'
+#Set file paths
+out_loc="$HOME/Cayo_meth/intersect_files/"
+inputs_loc="$HOME/Projects/macaque_metadata/output_files/"
 
 #Input files
-CPGs=$1
-REGIONS=$2
+CPGs=${inputs_loc}$1
+REGIONS=${inputs_loc}$2
 
 #Output files
-CPGSxREGIONS=${file_loc}regions_to_cpgs.txt
+CPGSxREGIONS=${out_loc}regions_to_cpgs.txt
 
 #Intersect autosome/x-chrom cpgs and regions
 bedtools intersect -a ${CPGs} -b ${REGIONS} -wa -wb > ${CPGSxREGIONS}
 
 #intersect with the annotation file
-for file in ./output_files/mmul_*.bed; do
+for file in ${inputs_loc}mmul_*.bed; do
     base=$(basename "${file}" .bed)
 
     echo "Intersecting ${file} with annotation file..."
 
     bedtools intersect \
      -a ${file} -b ${CPGSxREGIONS} \
-     -wo > ${file_loc}${base}_intersect.txt
+     -wo > ${out_loc}${base}_intersect.txt
 done
 
